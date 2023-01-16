@@ -1,0 +1,56 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+nav {
+    width: 300px;
+    background: lightgray;
+    user-select: none;
+
+    h1 {
+        margin: 0;
+        padding: 8px 16px;
+    }
+
+    h2 {
+        margin: 16px 0 0;
+        font-size: 16px;
+        padding: 8px 16px;
+    }
+
+    a {
+        display: block;
+        padding: 8px 16px;
+        color: black;
+
+        &:hover {
+            background: #c4c4c4;
+        }
+
+        &.active {
+            background: gray;
+        }
+    }
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    header {
+        height: 50px;
+        background: gray;
+    }
+
+    canvas {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+    }
+
+    aside {        
+    }
+}
