@@ -1,5 +1,7 @@
-import { Vector } from "./math";
+import { Polygon } from "./math";
 import { RenderContext } from "./rendering";
+
+export type LogStyle = "Info" | "Success" | "Warning" | "Error";
 
 export type ScenarioRunFn = (ctx: ScenarioContext) => Promise<void>;
 export type ScenarioDrawFn = (ctx: RenderContext) => void;
@@ -10,17 +12,9 @@ export interface Scenario {
 }
 
 export interface ScenarioContext {
-    log(text: string): void;
+    readonly polygons: ReadonlyArray<Polygon>;
+    log(text: string, style?: LogStyle): void;
     waitForStep(draw: ScenarioDrawFn): Promise<void>;
-}
-
-export class ScenarioContextImpl implements ScenarioContext {
-    log(text: string): void {
-        console.log(text);
-    }
-    waitForStep(draw: ScenarioDrawFn): Promise<void> {
-        return new Promise(resolve => resolve());
-    }
 }
 
 export const createScenario = (name: string, run: ScenarioRunFn) => {

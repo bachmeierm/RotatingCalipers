@@ -1,15 +1,23 @@
-import {Component, ElementRef, ViewChild, AfterViewInit, OnDestroy} from "@angular/core";
-import { DiameterScenario } from "src/algo/diameter";
-import {createRenderContext, RenderFn, Scenario, ScenarioContext, scenarios} from "../algo";
+import {Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectionStrategy} from "@angular/core";
+import {createRenderContext, LogStyle, Polygon, RenderContext, RenderFn, Scenario, ScenarioContext, scenarios, Vector} from "../algo";
+import {DiameterScenario} from "src/algo/diameter";
+
+type LogItem = {text: string, style?: LogStyle};
 
 @Component({
     selector: "app-root",
     templateUrl: "./app.component.html",
     styleUrls: ["./app.component.scss"],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
 
     scenarios: Scenario[] = scenarios;
+    polygons: Polygon[] = [];
+    selectedPolygonIdx?: number;
+    currentScenario?: Scenario;
+    isAutoplayActive: boolean = true;
+    logItems: LogItem[] = [];
 
     @ViewChild("canvas", {static: true})
     private canvasRef?: ElementRef<HTMLCanvasElement>;
@@ -20,12 +28,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private currentResolveFn?: () => void;
 
     ngAfterViewInit(): void {
+        this.currentScenario = DiameterScenario;
+
         const canvas = this.canvasRef?.nativeElement!;
         this.setupRendering(canvas);
-        this.runAlgoLoop();
 
         const fn = () => setTimeout(() => {
-            if (this.currentResolveFn) {
+            if (this.isAutoplayActive && this.currentResolveFn) {
                 this.currentResolveFn();
             }
             fn();
@@ -40,9 +49,56 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         }
     }
 
+    runScenario(): void {
+        this.runAlgorithm();
+    }
+
+    stopScenario(): void {
+        // TODO: Implement
+    }
+
+    toggleAutoplay(): void {
+        this.isAutoplayActive = !this.isAutoplayActive;
+    }
+
     step(): void {
         if (!this.currentResolveFn) return;
         this.currentResolveFn();
+    }
+
+    addPolygon(): void {
+        this.polygons.push(new Polygon([]));
+    }
+
+    removePolygon(index: number): void {
+        if (this.selectedPolygonIdx === index) {
+            this.selectedPolygonIdx = undefined;
+        }
+        if (this.selectedPolygonIdx != null && this.selectedPolygonIdx > index) {
+            this.selectedPolygonIdx--;
+        }
+        this.polygons.splice(index, 1);
+    }
+
+    selectPolygon(index: number): void {
+        this.selectedPolygonIdx = index;
+    }
+
+    canvasClick(event: MouseEvent): void {
+        const target = event.target as HTMLCanvasElement;
+        const rect = target.getBoundingClientRect();
+        const x = Math.round(event.clientX - rect.left);
+        const y = Math.round(event.clientY - rect.top);
+        const pos = new Vector(x, y);
+        if (this.selectedPolygonIdx != null) {
+            let polygon = this.polygons[this.selectedPolygonIdx];
+            polygon = polygon.mergeWithPoint(pos);
+            this.polygons[this.selectedPolygonIdx] = polygon;
+        }
+    }
+
+    trackIndex(index: number): any {
+        return index;
     }
 
     private setupRendering(canvas: HTMLCanvasElement): void {
@@ -61,14 +117,25 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
 
     private draw(ctx: CanvasRenderingContext2D, frameCount: number): void {
+        const renderCtx = createRenderContext(ctx, frameCount);
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        if (!this.currentRenderFn) return;
-        this.currentRenderFn(createRenderContext(ctx, frameCount));
+        if (!this.currentRenderFn) {
+            this.drawEditMode(renderCtx);
+        } else {
+            this.currentRenderFn(renderCtx);
+        }
     }
 
-    private async runAlgoLoop() {
+    private drawEditMode(ctx: RenderContext): void {
+        this.polygons.forEach(p => {
+            ctx.drawPolygon(p.vertices, {color: "black", thickness: 1, style: "Solid"});
+        });
+    }
+
+    private async runAlgorithm() {
         const ctx: ScenarioContext = {
-            log: text => console.log(text),
+            polygons: this.polygons,
+            log: (text, style) => this.logItems.push({text, style}),
             waitForStep: render => new Promise(x => {
                 this.currentRenderFn = render;
                 this.currentResolveFn = x;
