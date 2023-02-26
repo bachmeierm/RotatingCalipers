@@ -1,39 +1,10 @@
-<nav>
-    <h1>Rotating Calipers</h1>
-    <a *ngFor="let s of scenarios" [routerLink]="['/', s.name]" routerLinkActive="active">{{ s.name }}</a>
-</nav>
+<div class="canvas">
+    <canvas #canvas (mousedown)="canvasClick($event)"></canvas>
+</div>
 
-<main>
-    <header>
-        <span>{{ currentScenario?.name }}</span>
-        <button (click)="runScenario()">Run</button>
-        <button (click)="stopScenario()">Cancel</button>
-        <button (click)="toggleAutoplay()">Autoplay {{ isAutoplayActive ? '(on)' : '(off)' }}</button>
-        <button (click)="step()">Step</button>
-    </header>
-    <div class="content">
-        <div class="canvas">
-            <canvas #canvas (mousedown)="canvasClick($event)"></canvas>
-        </div>
-        <aside>
-            <h2>Polygons</h2>
-            <div *ngFor="let p of polygons; let i = index" (click)="selectPolygon(i)">
-                <span>Polygon {{ i + 1 }}</span>
-                <span *ngIf="i === selectedPolygonIdx">(selected)</span>
-                <button (click)="removePolygon(i)">X</button>
-            </div>
-            <button (click)="addPolygon()">Add</button>
-            <h2>Output</h2>
-            <div class="log-list">
-                <div *ngFor="let item of logItems; trackBy: trackIndex"
-                     class="item"
-                     [class.info]="item.style === 'Info'"
-                     [class.warning]="item.style === 'Warning'"
-                     [class.success]="item.style === 'Success'"
-                     [class.error]="item.style === 'Error'">
-                     {{ item.text }}
-                </div>
-            </div>
-        </aside>
-    </div>
-</main>
+<div class="actions">
+    <button (click)="stopScenario()">Cancel</button>
+    <button (click)="runScenario()">Run</button>
+    <button (click)="toggleAutoplay()">Autoplay {{ isAutoplayActive ? '(on)' : '(off)' }}</button>
+    <button (click)="step()">Step</button>
+</div>
