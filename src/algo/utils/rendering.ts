@@ -10,6 +10,7 @@ export type StrokeStyle = "Solid" | "Dashed";
 export interface RenderContext {
     readonly deltaSeconds: number;
     drawLine(a: Vector, b: Vector, stroke: Stroke): void;
+    drawPolyline(vertices: ReadonlyArray<Vector>, stroke: Stroke): void;
     drawPolygon(vertices: ReadonlyArray<Vector>, stroke: Stroke): void;
     fillPolygon(vertices: ReadonlyArray<Vector>, brush: Brush): void;
 }
@@ -20,15 +21,27 @@ export const createRenderContext = (ctx: CanvasRenderingContext2D, deltaSeconds:
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
-            ctx.closePath()
-            ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.thickness;
-            ctx.stroke();
+        ctx.closePath()
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.thickness;
+        ctx.setLineDash(stroke.style === "Dashed" ? [10, 10] : []);
+        ctx.stroke();
+    },
+    drawPolyline: (vertices, stroke) => {
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.thickness;
+        ctx.setLineDash(stroke.style === "Dashed" ? [10, 10] : []);
+        vertices.forEach(v => {
+            ctx.lineTo(v.x, v.y);
+        });
+        ctx.stroke();
     },
     drawPolygon: (vertices, stroke) => {
         ctx.beginPath();
         ctx.strokeStyle = stroke.color;
         ctx.lineWidth = stroke.thickness;
+        ctx.setLineDash(stroke.style === "Dashed" ? [10, 10] : []);
         vertices.forEach(v => {
             ctx.lineTo(v.x, v.y);
         });

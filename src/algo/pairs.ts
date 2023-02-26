@@ -4,29 +4,32 @@ export const AntipodalPairsScenario = createScenario("AntipodalPairs", async ctx
     const polygon = ctx.polygons[0];
 
     const strokeBlack: Stroke = {color: "black", thickness: 2, style: "Solid"};
-    const strokeBlue: Stroke = {color: "blue", thickness: 2, style: "Solid"};
-    const strokeRed: Stroke = {color: "red", thickness: 2, style: "Solid"};
+    const strokeBlackDashed: Stroke = {color: "black", thickness: 2, style: "Dashed"};
+    const strokeRed: Stroke = {color: "red", thickness: 4, style: "Solid"};
 
     const brushBlue: Brush = {color: "#2DBFFF88"};
 
     let p = polygon.getVertex(0);
     let q = p.next();
 
+    let convexChain: Vector[] = [];
+
     const render = (ctx: RenderContext, a: Vector, b: Vector, dir: Vector) => {
         ctx.fillPolygon(polygon.vertices, brushBlue);
         ctx.drawPolygon(polygon.vertices, strokeBlack);
-        ctx.drawLine(a.sub(dir), a.add(dir), strokeBlue);
-        ctx.drawLine(b.sub(dir), b.add(dir), strokeBlue);
+        ctx.drawLine(a.sub(dir), a.add(dir), strokeBlack);
+        ctx.drawLine(b.sub(dir), b.add(dir), strokeBlack);
+        ctx.drawPolyline(convexChain, strokeRed);
     };
 
     const renderInit = (ctx: RenderContext) => {
         const dir = p.next().sub(p).normalized().scale(10000);
         ctx.fillPolygon(polygon.vertices, brushBlue);
         ctx.drawPolygon(polygon.vertices, strokeBlack);
-        ctx.drawLine(p.sub(dir), p.add(dir), strokeRed);
-        ctx.drawLine(q.sub(dir), q.add(dir), strokeRed);
-        ctx.drawLine(p, q, strokeRed);
-        ctx.drawLine(p.next(), q, strokeRed);
+        ctx.drawLine(p.sub(dir), p.add(dir), strokeBlack);
+        ctx.drawLine(q.sub(dir), q.add(dir), strokeBlack);
+        ctx.drawLine(p, q, strokeBlackDashed);
+        ctx.drawLine(p.next(), q, strokeBlackDashed);
     };
 
     const renderP = (ctx: RenderContext) => {
@@ -57,6 +60,13 @@ export const AntipodalPairsScenario = createScenario("AntipodalPairs", async ctx
     while (true) {
         await ctx.waitForStep(renderP);
         p = p.next();
+        // Determine q+ for visualization
+        let qq = q;
+        convexChain = [q];
+        while (area(p, p.next(), qq.next()) > area(p, p.next(), qq)) {
+            qq = qq.next();
+            convexChain.push(qq);
+        }
         ctx.log(`Found pair ${p.toString()} and ${q.toString()}`, "Success");
         while (area(p, p.next(), q.next()) > area(p, p.next(), q)) {
             await ctx.waitForStep(renderQ);
